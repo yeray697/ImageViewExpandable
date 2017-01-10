@@ -1,0 +1,19 @@
+<RelativeLayout android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/rlImageZoom"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center">
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center">
+        <ImageView
+            android:id="@+id/ivExpanded"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="fitStart"
+            android:background="#d43626"
+            android:adjustViewBounds="true"/>
+    </RelativeLayout>
+</RelativeLayout>
