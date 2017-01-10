@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.yeray697.imagezoomview.ImageZoomView;
@@ -16,13 +17,13 @@ public class Sample_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sample);
 
-        izv = (ImageZoomView) findViewById(R.id.ivZoom);
+        //izv = (ImageZoomView) findViewById(R.id.ivZoom);
         (findViewById(R.id.ivSample)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                //izv = new ImageZoomView(Sample_Activity.this);
-                //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
+                izv = new ImageZoomView(Sample_Activity.this);
+                ((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
                 izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, new ImageZoomView.OnAnimationListener() {
 
                     @Override

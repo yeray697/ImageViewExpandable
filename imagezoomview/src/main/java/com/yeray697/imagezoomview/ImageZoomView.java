@@ -4,7 +4,9 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
+import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -16,8 +18,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.v4.content.ContextCompat;
+import android.text.style.BackgroundColorSpan;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -31,34 +36,65 @@ import java.io.ByteArrayOutputStream;
 
 
 public class ImageZoomView extends RelativeLayout {
+
+    private final static String ZOOM_KEY = "zoom";
+    private final static String IMAGE_KEY = "image";
+    private final static String THUMBVIEW_KEY = "thumbView";
+    private final static String CONTAINER_ID_KEY = "containerId";
+    private final static String START_COLOR_KEY = "start_color";
+    private final static String END_COLOR_KEY = "end_color";
+    private final static String SUPER_STATE_KEY = "superState";
+
     ImageView destination;
     RelativeLayout parent;
 
     private boolean zoomed;
     private Drawable image;
+    private int startColor;
+    private int endColor;
+    private View thumbView;
+    private int containerId;
+
+
+    //Animation variables
+    private static Animator mCurrentAnimator;
+    private static int mShortAnimationDuration = -1;
+    private Rect startBounds;
+    private Rect finalBounds;
+    private float startScale;
+    private float startScaleFinal;
+    private OnAnimationListener onAnimationListener;
+
+    public interface OnAnimationListener {
+        void preZoomIn();
+        void postZoomIn();
+        void preZoomOut();
+        void postZoomOut();
+    }
 
     public ImageZoomView(Context context) {
         super(context,null);
-        inflateView(context);
+        inflateView();
     }
 
     public ImageZoomView(Context context, AttributeSet attrs) {
         super(context, attrs,0);
-        inflateView(context);
+        inflateView();
     }
 
     public ImageZoomView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        inflateView(context);
+        inflateView();
     }
 
-    private void inflateView(Context context) {
+    private void inflateView() {
         String infService = Context.LAYOUT_INFLATER_SERVICE;
-        LayoutInflater li =
-                (LayoutInflater)getContext().getSystemService(infService);
+        LayoutInflater li = (LayoutInflater)getContext().getSystemService(infService);
         li.inflate(R.layout.imagezoomview, this, true);
         parent = (RelativeLayout) findViewById(R.id.rlImageZoom);
         destination = (ImageView) findViewById(R.id.ivExpanded);
+        startColor = Color.parseColor("#00000000");
+        endColor = Color.parseColor("#BB000000");
         this.setFocusableInTouchMode(true);
         this.requestFocus();
         this.setOnKeyListener(new OnKeyListener() {
@@ -79,36 +115,227 @@ public class ImageZoomView extends RelativeLayout {
     }
 
     public void dismissImage() {
-        parent.performClick();
+        destination.performClick();
     }
 
-
-    private static Animator mCurrentAnimator;
-    private static int mShortAnimationDuration = -1;
-
-    public interface OnAnimationListener {
-        void preZoomIn();
-        void postZoomIn();
-        void preZoomOut();
-        void postZoomOut();
-    }
-
-    private Rect startBounds;
-    private Rect finalBounds;
-    private float startScale;
-    private float startScaleFinal = startScale;
-    private OnAnimationListener onAnimationListener;
-    private View thumbView;
     /**
-     * Main source: https://developer.android.com/training/animation/zoom.html
+     *
+     * Method that
+     * Main sources:
+     *      https://developer.android.com/training/animation/zoom.html
+     *      https://www.youtube.com/watch?v=bSgUn2rZiko
+     * @param containerId
+     * @param image
+     * @param thumbView
+     * @param onAnimationListener
      */
     public void zoomImageFromThumb(int containerId, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
+
         this.onAnimationListener = onAnimationListener;
         this.thumbView = thumbView;
+        this.containerId = containerId;
+        this.image = image;
+
+        configInitialPoints();
+
+        zoomIn();
+
+        startScaleFinal = startScale;
+
+        destination.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                zoomed = false;
+                if (mCurrentAnimator != null) {
+                    mCurrentAnimator.cancel();
+                }
+                if (onAnimationListener != null)
+                    onAnimationListener.preZoomOut();
+                zoomOut();
+            }
+        });
+    }
+
+    /**
+     * Method that runs the zoom in animation
+     */
+    private void zoomIn(){
+        //Background fade in animation
+        ObjectAnimator fadeIn = ObjectAnimator.ofInt(parent, "backgroundColor",startColor,endColor);
+        fadeIn.setRepeatCount(0);
+        fadeIn.setRepeatMode(ValueAnimator.REVERSE);
+        fadeIn.setEvaluator(new ArgbEvaluator());
+        //
+        AnimatorSet set = new AnimatorSet();
+
+        set.setTarget(destination);
+        set
+                .play(ObjectAnimator.ofFloat(destination, View.X,
+                        startBounds.left, finalBounds.left))
+                .with(ObjectAnimator.ofFloat(destination, View.Y,
+                        startBounds.top, finalBounds.top))
+                .with(ObjectAnimator.ofFloat(destination, View.SCALE_X,
+                        startScale, 1f)).with(ObjectAnimator.ofFloat(destination,
+                View.SCALE_Y, startScale, 1f))
+                .with(fadeIn);
+        set.setDuration(mShortAnimationDuration);
+        set.setInterpolator(new DecelerateInterpolator());
+        set.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mCurrentAnimator = null;
+                if (onAnimationListener != null)
+                    onAnimationListener.postZoomIn();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                mCurrentAnimator = null;
+            }
+        });
+        set.start();
+        mCurrentAnimator = set;
+    }
+
+    /**
+     * Method that runs the zoom out animation
+     */
+    private void zoomOut() {
+        //Background fade out animation
+        ObjectAnimator fadeOut = ObjectAnimator.ofInt(parent, "backgroundColor",endColor,startColor);
+        fadeOut.setRepeatCount(0);
+        fadeOut.setRepeatMode(ValueAnimator.REVERSE);
+        fadeOut.setEvaluator(new ArgbEvaluator());
+        //
+        AnimatorSet set = new AnimatorSet();
+        set.play(ObjectAnimator
+                .ofFloat(destination, View.X, startBounds.left))
+                .with(ObjectAnimator
+                        .ofFloat(destination,
+                                View.Y,startBounds.top))
+                .with(ObjectAnimator
+                        .ofFloat(destination,
+                                View.SCALE_X, startScaleFinal))
+                .with(ObjectAnimator
+                        .ofFloat(destination,
+                                View.SCALE_Y, startScaleFinal))
+                .with(fadeOut);
+        set.setDuration(mShortAnimationDuration);
+        set.setInterpolator(new DecelerateInterpolator());
+        set.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                destination.setVisibility(View.GONE);
+                parent.setVisibility(View.GONE);
+                mCurrentAnimator = null;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                destination.setVisibility(View.GONE);
+                parent.setVisibility(View.GONE);
+                mCurrentAnimator = null;
+            }
+        });
+        set.start();
+        AnimatorSet setBackground = new AnimatorSet();
+        setBackground.setTarget(parent);
+
+        ObjectAnimator fadeIn = ObjectAnimator.ofInt(parent, "backgroundColor",endColor,startColor);
+        fadeIn.setRepeatCount(0);
+        fadeIn.setRepeatMode(ValueAnimator.REVERSE);
+        fadeIn.setEvaluator(new ArgbEvaluator());
+        setBackground.play(fadeIn);
+        setBackground.setTarget(parent);
+
+        setBackground.setInterpolator(new DecelerateInterpolator());
+        setBackground.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mCurrentAnimator = null;
+                if (onAnimationListener != null)
+                    onAnimationListener.postZoomOut();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                mCurrentAnimator = null;
+            }
+        });
+        setBackground.start();
+        mCurrentAnimator = set;
+    }
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(SUPER_STATE_KEY, super.onSaveInstanceState());
+        bundle.putBoolean(ZOOM_KEY, this.zoomed);
+        if (zoomed){
+            Bitmap bitmap = ((BitmapDrawable)this.image).getBitmap();
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            byte[] bitmapdata = stream.toByteArray();
+            bundle.putByteArray(IMAGE_KEY,bitmapdata);
+            bundle.putInt(START_COLOR_KEY,startColor);
+            bundle.putInt(END_COLOR_KEY,endColor);
+            bundle.putInt(THUMBVIEW_KEY,thumbView.getId());
+            bundle.putInt(CONTAINER_ID_KEY,containerId);
+        }
+        return bundle;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof Bundle)
+        {
+            Bundle bundle = (Bundle) state;
+            this.zoomed = bundle.getBoolean(ZOOM_KEY);
+            if (zoomed) {
+                byte[] image = bundle.getByteArray(IMAGE_KEY);
+                Bitmap bmp = BitmapFactory.decodeByteArray(image, 0, image.length);
+                this.image = new BitmapDrawable(getResources(),bmp);
+                destination.setImageDrawable(this.image);
+
+                destination.setVisibility(VISIBLE);
+                parent.setVisibility(VISIBLE);
+
+                thumbView = ((View)this.getParent()).findViewById(bundle.getInt(THUMBVIEW_KEY));
+                containerId = bundle.getInt(CONTAINER_ID_KEY);
+                startColor = bundle.getInt(START_COLOR_KEY);
+                endColor = bundle.getInt(END_COLOR_KEY);
+
+                parent.setBackgroundColor(endColor);
+
+                destination.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        zoomed = false;
+                        if (mCurrentAnimator != null) {
+                            mCurrentAnimator.cancel();
+                        }
+                        if (onAnimationListener != null)
+                            onAnimationListener.preZoomOut();
+                        zoomOut();
+                    }
+                });
+
+                configInitialPoints();
+            }
+            state = bundle.getParcelable(SUPER_STATE_KEY);
+        }
+        super.onRestoreInstanceState(state);
+    }
+
+    /**
+     * Contains operations to get coordinates, used to play the animation
+     */
+    private void configInitialPoints() {
         zoomed = true;
         if (onAnimationListener != null)
             onAnimationListener.preZoomIn();
-        changeOrientation(getContext().getResources().getConfiguration().orientation);
+        this.bringToFront();
 
         mShortAnimationDuration = getContext().getResources().getInteger(
                 android.R.integer.config_shortAnimTime);
@@ -117,16 +344,15 @@ public class ImageZoomView extends RelativeLayout {
             mCurrentAnimator.cancel();
         }
 
-        this.image = image;
         destination.setImageDrawable(this.image);
 
         startBounds = new Rect();
         finalBounds = new Rect();
-        final Point globalOffset = new Point();
+        Point globalOffset = new Point();
 
 
-        thumbView.getGlobalVisibleRect(startBounds);
-        ((Activity)getContext()).findViewById(containerId)
+        this.thumbView.getGlobalVisibleRect(startBounds);
+        ((Activity)getContext()).findViewById(this.containerId)
                 .getGlobalVisibleRect(finalBounds, globalOffset);
         startBounds.offset(-globalOffset.x, -globalOffset.y);
         finalBounds.offset(-globalOffset.x, -globalOffset.y);
@@ -153,195 +379,5 @@ public class ImageZoomView extends RelativeLayout {
 
         destination.setPivotX(0f);
         destination.setPivotY(0f);
-
-        zoomIn();
-
-
-        startScaleFinal = startScale;
-        parent.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                zoomed = false;
-                if (mCurrentAnimator != null) {
-                    mCurrentAnimator.cancel();
-                }
-                if (onAnimationListener != null)
-                    onAnimationListener.preZoomOut();
-                zoomOut();
-            }
-        });
-    }
-
-    private void zoomIn(){
-
-        AnimatorSet set = new AnimatorSet();
-
-        set.setTarget(destination);
-        set
-                .play(ObjectAnimator.ofFloat(destination, View.X,
-                        startBounds.left, finalBounds.left))
-                .with(ObjectAnimator.ofFloat(destination, View.Y,
-                        startBounds.top, finalBounds.top))
-                .with(ObjectAnimator.ofFloat(destination, View.SCALE_X,
-                        startScale, 1f)).with(ObjectAnimator.ofFloat(destination,
-                View.SCALE_Y, startScale, 1f));
-        set.setDuration(mShortAnimationDuration);
-        set.setInterpolator(new DecelerateInterpolator());
-        set.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                mCurrentAnimator = null;
-                if (onAnimationListener != null)
-                    onAnimationListener.postZoomIn();
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                mCurrentAnimator = null;
-            }
-        });
-        set.start();
-        AnimatorSet setBackground = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(),R.animator.image_zoom_in);
-
-        setBackground.setTarget(parent);
-
-        setBackground.setInterpolator(new DecelerateInterpolator());
-        setBackground.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                mCurrentAnimator = null;
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                mCurrentAnimator = null;
-            }
-        });
-        setBackground.start();
-        mCurrentAnimator = set;
-    }
-
-    private void zoomOut() {
-        AnimatorSet set = new AnimatorSet();
-        set.play(ObjectAnimator
-                .ofFloat(destination, View.X, startBounds.left))
-                .with(ObjectAnimator
-                        .ofFloat(destination,
-                                View.Y,startBounds.top))
-                .with(ObjectAnimator
-                        .ofFloat(destination,
-                                View.SCALE_X, startScaleFinal))
-                .with(ObjectAnimator
-                        .ofFloat(destination,
-                                View.SCALE_Y, startScaleFinal));
-        set.setDuration(mShortAnimationDuration);
-        set.setInterpolator(new DecelerateInterpolator());
-        set.addListener(new AnimatorListenerAdapter() {
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                thumbView.setAlpha(1f);
-                destination.setVisibility(View.GONE);
-                parent.setVisibility(View.GONE);
-                mCurrentAnimator = null;
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                destination.setVisibility(View.GONE);
-                parent.setVisibility(View.GONE);
-                mCurrentAnimator = null;
-            }
-        });
-        set.start();
-        AnimatorSet setBackground = (AnimatorSet) AnimatorInflater.loadAnimator(getContext(),R.animator.image_zoom_out);
-
-        setBackground.setTarget(parent);
-
-        setBackground.setInterpolator(new DecelerateInterpolator());
-        setBackground.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                mCurrentAnimator = null;
-                if (onAnimationListener != null)
-                    onAnimationListener.postZoomOut();
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                mCurrentAnimator = null;
-            }
-        });
-        setBackground.start();
-        mCurrentAnimator = set;
-    }
-
-    public void changeOrientation(int vertical){
-        ViewGroup.LayoutParams params = null;
-        if (vertical == Configuration.ORIENTATION_PORTRAIT) {
-            params = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        } else if (vertical == Configuration.ORIENTATION_LANDSCAPE){
-            params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        }
-        if (params != null)
-            destination.setLayoutParams(params);
-
-        this.bringToFront();
-    }
-
-    @Override
-    public Parcelable onSaveInstanceState()
-    {
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("superState", super.onSaveInstanceState());
-        bundle.putBoolean("zoom", this.zoomed);
-        if (zoomed){
-            Bitmap bitmap = ((BitmapDrawable)this.image).getBitmap();
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            byte[] bitmapdata = stream.toByteArray();
-            bundle.putByteArray("image",bitmapdata);
-            int color = Color.TRANSPARENT;
-            Drawable background = parent.getBackground();
-            if (background instanceof ColorDrawable)
-                color = ((ColorDrawable) background).getColor();
-            bundle.putInt("back_color",color);
-        }
-        return bundle;
-    }
-
-    @Override
-    public void onRestoreInstanceState(Parcelable state)
-    {
-        if (state instanceof Bundle)
-        {
-            Bundle bundle = (Bundle) state;
-            this.zoomed = bundle.getBoolean("zoom");
-            if (zoomed) {
-                byte[] image = bundle.getByteArray("image");
-                Bitmap bmp = BitmapFactory.decodeByteArray(image, 0, image.length);
-                this.image = new BitmapDrawable(getResources(),bmp);
-                destination.setImageDrawable(this.image);
-                destination.setVisibility(VISIBLE);
-                parent.setVisibility(VISIBLE);
-                changeOrientation(getContext().getResources().getConfiguration().orientation);
-                parent.setBackgroundColor(bundle.getInt("back_color"));
-                parent.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        zoomed = false;
-                        if (mCurrentAnimator != null) {
-                            mCurrentAnimator.cancel();
-                        }
-                        if (onAnimationListener != null)
-                            onAnimationListener.preZoomOut();
-                        zoomOut();
-                    }
-                });
-            }
-            state = bundle.getParcelable("superState");
-        }
-
-        super.onRestoreInstanceState(state);
     }
 }
