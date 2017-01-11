@@ -26,6 +26,7 @@ import android.text.style.BackgroundColorSpan;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
@@ -54,7 +55,6 @@ public class ImageZoomView extends RelativeLayout {
     private int endColor;
     private View thumbView;
     private int containerId;
-
 
     //Animation variables
     private static Animator mCurrentAnimator;
@@ -120,7 +120,7 @@ public class ImageZoomView extends RelativeLayout {
 
     /**
      *
-     * Method that
+     * Method that zoom a imageview to full screen
      * Main sources:
      *      https://developer.android.com/training/animation/zoom.html
      *      https://www.youtube.com/watch?v=bSgUn2rZiko
@@ -379,5 +379,31 @@ public class ImageZoomView extends RelativeLayout {
 
         destination.setPivotX(0f);
         destination.setPivotY(0f);
+    }
+
+    private static Rect rect;
+    public static boolean highlightImageOnTouch(View v, MotionEvent event) {
+        ImageView image = (ImageView) v;
+        if(event.getAction() == MotionEvent.ACTION_DOWN){
+            image.setColorFilter(Color.argb(50, 0, 0, 0));
+            rect = new Rect(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
+        }
+        if(event.getAction() == MotionEvent.ACTION_UP){
+            image.setColorFilter(Color.argb(0, 0, 0, 0));
+        }
+        if(event.getAction() == MotionEvent.ACTION_MOVE){
+            if(!rect.contains(v.getLeft() + (int) event.getX(), v.getTop() + (int) event.getY())){
+                image.setColorFilter(Color.argb(0, 0, 0, 0));
+            }
+        }
+        return false;
+    }
+    public static void highlightImageOnTouch(ImageView imageView) {
+        imageView.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return highlightImageOnTouch(view,motionEvent);
+            }
+        });
     }
 }

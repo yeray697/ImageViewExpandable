@@ -2,15 +2,15 @@ package com.yeray697.imagezoomsample;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.yeray697.imagezoomview.ImageZoomView;
 
 public class Sample_Activity extends AppCompatActivity {
     ImageZoomView izv;
+    ImageView imageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,7 +18,15 @@ public class Sample_Activity extends AppCompatActivity {
         setContentView(R.layout.activity_sample);
 
         izv = (ImageZoomView) findViewById(R.id.ivZoom);
-        (findViewById(R.id.ivSample)).setOnClickListener(new View.OnClickListener() {
+        imageView = (ImageView) findViewById(R.id.ivSample);
+        ImageZoomView.highlightImageOnTouch(imageView);
+        /*imageView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return ImageZoomView.highlightImageOnTouch(view,motionEvent);
+            }
+        });*/
+        imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
