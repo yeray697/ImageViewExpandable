@@ -17,7 +17,6 @@
         android:layout_height="50dp"
         android:id="@+id/ivSample"
         android:src="@mipmap/ic_launcher"/>
-
     <ImageView
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -34,8 +33,7 @@
     <com.yeray697.imagezoomview.ImageZoomView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:startColor="@color/colorPrimaryDark"
-        app:endColor="@color/colorAccent"
+        app:endColor="#55000000"
         app:zoomTime="200"
         android:id="@+id/ivZoom"/>
 </RelativeLayout>

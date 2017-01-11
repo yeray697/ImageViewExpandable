@@ -41,13 +41,24 @@ public class Sample_Activity extends AppCompatActivity {
 
             }
         };
-        izv = (ImageZoomView) findViewById(R.id.ivZoom);
         imageView1 = (ImageView) findViewById(R.id.ivSample);
+        izv = (ImageZoomView) findViewById(R.id.ivZoom);
+        //izv = new ImageZoomView(Sample_Activity.this);
+
+        //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
+
         //ImageZoomView.highlightImageOnTouch(imageView1);
         imageView1.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 return ImageZoomView.highlightImageOnTouch(view,motionEvent);
+            }
+        });
+        imageView1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                izv.zoomIn(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+
             }
         });
 
@@ -59,6 +70,16 @@ public class Sample_Activity extends AppCompatActivity {
                 return ImageZoomView.highlightImageOnTouch(view,motionEvent);
             }
         });
+        imageView2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                //izv = new ImageZoomView(Sample_Activity.this);
+                //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
+                izv.zoomIn(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+
+            }
+        });
 
         imageView3 = (ImageView) findViewById(R.id.ivSample3);
         //ImageZoomView.highlightImageOnTouch(imageView3);
@@ -68,33 +89,13 @@ public class Sample_Activity extends AppCompatActivity {
                 return ImageZoomView.highlightImageOnTouch(view,motionEvent);
             }
         });
-        imageView1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                //izv = new ImageZoomView(Sample_Activity.this);
-                //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
-
-            }
-        });
-        imageView2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                //izv = new ImageZoomView(Sample_Activity.this);
-                //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
-
-            }
-        });
         imageView3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 //izv = new ImageZoomView(Sample_Activity.this);
                 //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+                izv.zoomIn(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
 
             }
         });

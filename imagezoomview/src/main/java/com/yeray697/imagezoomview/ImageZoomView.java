@@ -1,7 +1,6 @@
 package com.yeray697.imagezoomview;
 
 import android.animation.Animator;
-import android.animation.AnimatorInflater;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
@@ -9,7 +8,6 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,19 +15,14 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.v4.content.ContextCompat;
-import android.text.style.BackgroundColorSpan;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
@@ -40,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 
 public class ImageZoomView extends RelativeLayout {
 
+    //Save and restore instance keys
     private final static String ZOOM_KEY = "zoom";
     private final static String IMAGE_KEY = "image";
     private final static String THUMBVIEW_KEY = "thumbView";
@@ -48,13 +42,16 @@ public class ImageZoomView extends RelativeLayout {
     private final static String END_COLOR_KEY = "end_color";
     private final static String SUPER_STATE_KEY = "superState";
 
+    //Properties
     private int startColor;
     private int endColor;
     private int zoomTime;
 
-    ImageView destination;
-    RelativeLayout parent;
+    //Views
+    private ImageView destination;
+    private RelativeLayout parent;
 
+    //Zoom in and out variables
     private boolean zoomed;
     private Drawable image;
     private View thumbView;
@@ -68,10 +65,28 @@ public class ImageZoomView extends RelativeLayout {
     private float startScaleFinal;
     private OnAnimationListener onAnimationListener;
 
+    //ImageView highlight
+    private static Rect rect;
+
+    /**
+     * Listeners to manage events before and after zoom in and out
+     */
     public interface OnAnimationListener {
+        /**
+         * Called before zoom in
+         */
         void preZoomIn();
+        /**
+         * Called after zoom in
+         */
         void postZoomIn();
+        /**
+         * Called before zoom out
+         */
         void preZoomOut();
+        /**
+         * Called after zoom out
+         */
         void postZoomOut();
     }
 
@@ -102,14 +117,14 @@ public class ImageZoomView extends RelativeLayout {
                             R.styleable.ImageZoomView);
 
             startColor = a.getColor(R.styleable.ImageZoomView_startColor,Color.parseColor("#00000000"));
-            endColor = a.getColor(R.styleable.ImageZoomView_endColor,Color.parseColor("#BB000000"));
+            endColor = a.getColor(R.styleable.ImageZoomView_endColor,Color.parseColor("#55000000"));
             zoomTime = a.getInt(R.styleable.ImageZoomView_zoomTime,
                     getContext().getResources().getInteger(android.R.integer.config_shortAnimTime));
 
             a.recycle();
         } else {
             startColor = Color.parseColor("#00000000");
-            endColor = Color.parseColor("#BB000000");
+            endColor = Color.parseColor("#55000000");
             zoomTime = getContext().getResources().getInteger(android.R.integer.config_shortAnimTime);
         }
         this.setFocusableInTouchMode(true);
@@ -118,7 +133,7 @@ public class ImageZoomView extends RelativeLayout {
             @Override
             public boolean onKey(View view, int keyCode, KeyEvent event) {
                 if (zoomed && keyCode == KeyEvent.KEYCODE_BACK) {
-                    dismissImage();
+                    zoomOut();
                     return true;
                 }
                 return false;
@@ -131,22 +146,24 @@ public class ImageZoomView extends RelativeLayout {
         });
     }
 
-    public void dismissImage() {
+    /**
+     * Zoom out the image
+     */
+    public void zoomOut() {
         destination.performClick();
     }
 
     /**
-     *
      * Method that zoom a imageview to full screen
      * Main sources:
      *      https://developer.android.com/training/animation/zoom.html
      *      https://www.youtube.com/watch?v=bSgUn2rZiko
-     * @param containerId
-     * @param image
-     * @param thumbView
-     * @param onAnimationListener
+     * @param containerId View container id
+     * @param image Image to display
+     * @param thumbView ThumView view
+     * @param onAnimationListener Listener to handle pre/post zoom in and out
      */
-    public void zoomImageFromThumb(int containerId, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
+    public void zoomIn(int containerId, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
 
         this.onAnimationListener = onAnimationListener;
         this.thumbView = thumbView;
@@ -156,7 +173,7 @@ public class ImageZoomView extends RelativeLayout {
         configInitialPoints(new ConfigInitialPointsListener() {
             @Override
             public void ended() {
-                zoomIn();
+                zoomInAnimation();
 
                 startScaleFinal = startScale;
 
@@ -169,7 +186,7 @@ public class ImageZoomView extends RelativeLayout {
                         }
                         if (onAnimationListener != null)
                             onAnimationListener.preZoomOut();
-                        zoomOut();
+                        zoomOutAnimation();
                     }
                 });
             }
@@ -179,7 +196,7 @@ public class ImageZoomView extends RelativeLayout {
     /**
      * Method that runs the zoom in animation
      */
-    private void zoomIn(){
+    private void zoomInAnimation(){
         //Background fade in animation
         ObjectAnimator fadeIn = ObjectAnimator.ofInt(parent, "backgroundColor",startColor,endColor);
         fadeIn.setRepeatCount(0);
@@ -220,7 +237,7 @@ public class ImageZoomView extends RelativeLayout {
     /**
      * Method that runs the zoom out animation
      */
-    private void zoomOut() {
+    private void zoomOutAnimation() {
         //Background fade out animation
         ObjectAnimator fadeOut = ObjectAnimator.ofInt(parent, "backgroundColor",endColor,startColor);
         fadeOut.setRepeatCount(0);
@@ -337,7 +354,7 @@ public class ImageZoomView extends RelativeLayout {
                         }
                         if (onAnimationListener != null)
                             onAnimationListener.preZoomOut();
-                        zoomOut();
+                        zoomOutAnimation();
                     }
                 });
 
@@ -348,18 +365,23 @@ public class ImageZoomView extends RelativeLayout {
         super.onRestoreInstanceState(state);
     }
 
+    /**
+     * Inner interface used to check if configInitialPoints() is called to zoom in or to restore instance state
+     */
     private interface ConfigInitialPointsListener {
+        /**
+         * configInitialPoints ended
+         */
         void ended();
     }
 
     /**
-     * Contains operations to get coordinates, used to play the animation
+     * Contains operations to get coordinates that are used to play the animation
      */
     private void configInitialPoints(final ConfigInitialPointsListener configInitialPointsListener) {
         zoomed = true;
         if (onAnimationListener != null)
             onAnimationListener.preZoomIn();
-        this.bringToFront();
 
         if (mCurrentAnimator != null) {
             mCurrentAnimator.cancel();
@@ -413,10 +435,17 @@ public class ImageZoomView extends RelativeLayout {
                         thumbView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     }
                 });
-
+        this.bringToFront();
     }
 
-    private static Rect rect;
+    /**
+     * Method that higlight an image when it is touched.
+     * To use it, you must add it on view.OnTouchListener.
+     * It only works when you add it to an ImageView that is going to be zoomed
+     * @param v Touched view
+     * @param event OnTouch event
+     * @return Return false (not consuming on touch events
+     */
     public static boolean highlightImageOnTouch(View v, MotionEvent event) {
         ImageView image = (ImageView) v;
         if(event.getAction() == MotionEvent.ACTION_DOWN){
@@ -433,6 +462,12 @@ public class ImageZoomView extends RelativeLayout {
         }
         return false;
     }
+
+    /**
+     * Add to the passed view OnTouchListener, which calls within highlightImageOnTouch(View v, MotionEvent event)
+     * It only works when you add it to an ImageView that is going to be zoomed
+     * @param imageView ImageView that will be higlighted
+     */
     public static void highlightImageOnTouch(ImageView imageView) {
         imageView.setOnTouchListener(new OnTouchListener() {
             @Override
@@ -442,26 +477,50 @@ public class ImageZoomView extends RelativeLayout {
         });
     }
 
+    /**
+     * Return the start color of the animation
+     * @return
+     */
     public int getStartColor() {
         return startColor;
     }
 
+    /**
+     * Set the start color of the animation
+     * @param startColor
+     */
     public void setStartColor(int startColor) {
         this.startColor = startColor;
     }
 
+    /**
+     * Return the zoom time of the animation
+     * @return
+     */
     public int getZoomTime() {
         return zoomTime;
     }
 
+    /**
+     * Set the zoom time of the animation
+     * @param zoomTime
+     */
     public void setZoomTime(int zoomTime) {
         this.zoomTime = zoomTime;
     }
 
+    /**
+     * Return the end color of the animation
+     * @return
+     */
     public int getEndColor() {
         return endColor;
     }
 
+    /**
+     * Set the end color of the animation
+     * @param endColor
+     */
     public void setEndColor(int endColor) {
         this.endColor = endColor;
     }
