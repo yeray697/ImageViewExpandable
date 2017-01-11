@@ -10,6 +10,7 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -46,19 +47,20 @@ public class ImageZoomView extends RelativeLayout {
     private final static String END_COLOR_KEY = "end_color";
     private final static String SUPER_STATE_KEY = "superState";
 
+    private int startColor;
+    private int endColor;
+    private int zoomTime;
+
     ImageView destination;
     RelativeLayout parent;
 
     private boolean zoomed;
     private Drawable image;
-    private int startColor;
-    private int endColor;
     private View thumbView;
     private int containerId;
 
     //Animation variables
     private static Animator mCurrentAnimator;
-    private static int mShortAnimationDuration = -1;
     private Rect startBounds;
     private Rect finalBounds;
     private float startScale;
@@ -74,27 +76,41 @@ public class ImageZoomView extends RelativeLayout {
 
     public ImageZoomView(Context context) {
         super(context,null);
-        inflateView();
+        inflateView(null);
     }
 
     public ImageZoomView(Context context, AttributeSet attrs) {
         super(context, attrs,0);
-        inflateView();
+        inflateView(attrs);
     }
 
     public ImageZoomView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        inflateView();
+        inflateView(attrs);
     }
 
-    private void inflateView() {
+    private void inflateView(AttributeSet attrs) {
         String infService = Context.LAYOUT_INFLATER_SERVICE;
         LayoutInflater li = (LayoutInflater)getContext().getSystemService(infService);
         li.inflate(R.layout.imagezoomview, this, true);
         parent = (RelativeLayout) findViewById(R.id.rlImageZoom);
         destination = (ImageView) findViewById(R.id.ivExpanded);
-        startColor = Color.parseColor("#00000000");
-        endColor = Color.parseColor("#BB000000");
+        if (attrs != null) {
+            TypedArray a =
+                    getContext().obtainStyledAttributes(attrs,
+                            R.styleable.ImageZoomView);
+
+            startColor = a.getColor(R.styleable.ImageZoomView_startColor,Color.parseColor("#00000000"));
+            endColor = a.getColor(R.styleable.ImageZoomView_endColor,Color.parseColor("#BB000000"));
+            zoomTime = a.getInt(R.styleable.ImageZoomView_zoomTime,
+                    getContext().getResources().getInteger(android.R.integer.config_shortAnimTime));
+
+            a.recycle();
+        } else {
+            startColor = Color.parseColor("#00000000");
+            endColor = Color.parseColor("#BB000000");
+            zoomTime = getContext().getResources().getInteger(android.R.integer.config_shortAnimTime);
+        }
         this.setFocusableInTouchMode(true);
         this.requestFocus();
         this.setOnKeyListener(new OnKeyListener() {
@@ -178,7 +194,7 @@ public class ImageZoomView extends RelativeLayout {
                         startScale, 1f)).with(ObjectAnimator.ofFloat(destination,
                 View.SCALE_Y, startScale, 1f))
                 .with(fadeIn);
-        set.setDuration(mShortAnimationDuration);
+        set.setDuration(zoomTime);
         set.setInterpolator(new DecelerateInterpolator());
         set.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -220,7 +236,7 @@ public class ImageZoomView extends RelativeLayout {
                         .ofFloat(destination,
                                 View.SCALE_Y, startScaleFinal))
                 .with(fadeOut);
-        set.setDuration(mShortAnimationDuration);
+        set.setDuration(zoomTime);
         set.setInterpolator(new DecelerateInterpolator());
         set.addListener(new AnimatorListenerAdapter() {
 
@@ -337,9 +353,6 @@ public class ImageZoomView extends RelativeLayout {
             onAnimationListener.preZoomIn();
         this.bringToFront();
 
-        mShortAnimationDuration = getContext().getResources().getInteger(
-                android.R.integer.config_shortAnimTime);
-
         if (mCurrentAnimator != null) {
             mCurrentAnimator.cancel();
         }
@@ -407,4 +420,27 @@ public class ImageZoomView extends RelativeLayout {
         });
     }
 
+    public int getStartColor() {
+        return startColor;
+    }
+
+    public void setStartColor(int startColor) {
+        this.startColor = startColor;
+    }
+
+    public int getZoomTime() {
+        return zoomTime;
+    }
+
+    public void setZoomTime(int zoomTime) {
+        this.zoomTime = zoomTime;
+    }
+
+    public int getEndColor() {
+        return endColor;
+    }
+
+    public void setEndColor(int endColor) {
+        this.endColor = endColor;
+    }
 }
