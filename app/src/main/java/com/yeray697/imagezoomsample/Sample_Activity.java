@@ -10,48 +10,93 @@ import com.yeray697.imagezoomview.ImageZoomView;
 
 public class Sample_Activity extends AppCompatActivity {
     ImageZoomView izv;
-    ImageView imageView;
+    ImageView imageView1;
+    ImageView imageView2;
+    ImageView imageView3;
+    private ImageZoomView.OnAnimationListener listener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sample);
 
+        listener = new ImageZoomView.OnAnimationListener() {
+            @Override
+            public void preZoomIn() {
+
+            }
+
+            @Override
+            public void postZoomIn() {
+
+            }
+
+            @Override
+            public void preZoomOut() {
+
+            }
+
+            @Override
+            public void postZoomOut() {
+
+            }
+        };
         izv = (ImageZoomView) findViewById(R.id.ivZoom);
-        imageView = (ImageView) findViewById(R.id.ivSample);
-        ImageZoomView.highlightImageOnTouch(imageView);
-        /*imageView.setOnTouchListener(new View.OnTouchListener() {
+        imageView1 = (ImageView) findViewById(R.id.ivSample);
+        //ImageZoomView.highlightImageOnTouch(imageView1);
+        imageView1.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 return ImageZoomView.highlightImageOnTouch(view,motionEvent);
             }
-        });*/
-        imageView.setOnClickListener(new View.OnClickListener() {
+        });
+
+        imageView2 = (ImageView) findViewById(R.id.ivSample2);
+        //ImageZoomView.highlightImageOnTouch(imageView2);
+        imageView2.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return ImageZoomView.highlightImageOnTouch(view,motionEvent);
+            }
+        });
+
+        imageView3 = (ImageView) findViewById(R.id.ivSample3);
+        //ImageZoomView.highlightImageOnTouch(imageView3);
+        imageView3.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return ImageZoomView.highlightImageOnTouch(view,motionEvent);
+            }
+        });
+        imageView1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 //izv = new ImageZoomView(Sample_Activity.this);
                 //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, new ImageZoomView.OnAnimationListener() {
+                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
 
-                    @Override
-                    public void preZoomIn() {
-                    }
-
-                    @Override
-                    public void postZoomIn() {
-                    }
-
-                    @Override
-                    public void preZoomOut() {
-                    }
-
-                    @Override
-                    public void postZoomOut() {
-                    }
-                });
             }
         });
+        imageView2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
+                //izv = new ImageZoomView(Sample_Activity.this);
+                //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
+                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+
+            }
+        });
+        imageView3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                //izv = new ImageZoomView(Sample_Activity.this);
+                //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
+                izv.zoomImageFromThumb(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+
+            }
+        });
     }
 }
