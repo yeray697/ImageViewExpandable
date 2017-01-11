@@ -30,6 +30,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -152,22 +153,25 @@ public class ImageZoomView extends RelativeLayout {
         this.containerId = containerId;
         this.image = image;
 
-        configInitialPoints();
-
-        zoomIn();
-
-        startScaleFinal = startScale;
-
-        destination.setOnClickListener(new View.OnClickListener() {
+        configInitialPoints(new ConfigInitialPointsListener() {
             @Override
-            public void onClick(View view) {
-                zoomed = false;
-                if (mCurrentAnimator != null) {
-                    mCurrentAnimator.cancel();
-                }
-                if (onAnimationListener != null)
-                    onAnimationListener.preZoomOut();
-                zoomOut();
+            public void ended() {
+                zoomIn();
+
+                startScaleFinal = startScale;
+
+                destination.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        zoomed = false;
+                        if (mCurrentAnimator != null) {
+                            mCurrentAnimator.cancel();
+                        }
+                        if (onAnimationListener != null)
+                            onAnimationListener.preZoomOut();
+                        zoomOut();
+                    }
+                });
             }
         });
     }
@@ -337,17 +341,21 @@ public class ImageZoomView extends RelativeLayout {
                     }
                 });
 
-                configInitialPoints();
+                configInitialPoints(null);
             }
             state = bundle.getParcelable(SUPER_STATE_KEY);
         }
         super.onRestoreInstanceState(state);
     }
 
+    private interface ConfigInitialPointsListener {
+        void ended();
+    }
+
     /**
      * Contains operations to get coordinates, used to play the animation
      */
-    private void configInitialPoints() {
+    private void configInitialPoints(final ConfigInitialPointsListener configInitialPointsListener) {
         zoomed = true;
         if (onAnimationListener != null)
             onAnimationListener.preZoomIn();
@@ -361,37 +369,51 @@ public class ImageZoomView extends RelativeLayout {
 
         startBounds = new Rect();
         finalBounds = new Rect();
-        Point globalOffset = new Point();
+        final Point globalOffset = new Point();
 
 
-        this.thumbView.getGlobalVisibleRect(startBounds);
-        ((Activity)getContext()).findViewById(this.containerId)
-                .getGlobalVisibleRect(finalBounds, globalOffset);
-        startBounds.offset(-globalOffset.x, -globalOffset.y);
-        finalBounds.offset(-globalOffset.x, -globalOffset.y);
+        this.thumbView.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+
+                        thumbView.getGlobalVisibleRect(startBounds);
+                        ((Activity)getContext()).findViewById(containerId)
+                                .getGlobalVisibleRect(finalBounds, globalOffset);
+                        startBounds.offset(-globalOffset.x, -globalOffset.y);
+                        finalBounds.offset(-globalOffset.x, -globalOffset.y);
 
 
-        if ((float) finalBounds.width() / finalBounds.height()
-                > (float) startBounds.width() / startBounds.height()) {
-            startScale = (float) startBounds.height() / finalBounds.height();
-            float startWidth = startScale * finalBounds.width();
-            float deltaWidth = (startWidth - startBounds.width()) / 2;
-            startBounds.left -= deltaWidth;
-            startBounds.right += deltaWidth;
-        } else {
-            startScale = (float) startBounds.width() / finalBounds.width();
-            float startHeight = startScale * finalBounds.height();
-            float deltaHeight = (startHeight - startBounds.height()) / 2;
-            startBounds.top -= deltaHeight;
-            startBounds.bottom += deltaHeight;
-        }
+                        if ((float) finalBounds.width() / finalBounds.height()
+                                > (float) startBounds.width() / startBounds.height()) {
+                            startScale = (float) startBounds.height() / finalBounds.height();
+                            float startWidth = startScale * finalBounds.width();
+                            float deltaWidth = (startWidth - startBounds.width()) / 2;
+                            startBounds.left -= deltaWidth;
+                            startBounds.right += deltaWidth;
+                        } else {
+                            startScale = (float) startBounds.width() / finalBounds.width();
+                            float startHeight = startScale * finalBounds.height();
+                            float deltaHeight = (startHeight - startBounds.height()) / 2;
+                            startBounds.top -= deltaHeight;
+                            startBounds.bottom += deltaHeight;
+                        }
 
-        destination.setVisibility(View.VISIBLE);
-        parent.setVisibility(View.VISIBLE);
+                        destination.setVisibility(View.VISIBLE);
+                        parent.setVisibility(View.VISIBLE);
 
 
-        destination.setPivotX(0f);
-        destination.setPivotY(0f);
+                        destination.setPivotX(0f);
+                        destination.setPivotY(0f);
+
+                        if (configInitialPointsListener != null)
+                            configInitialPointsListener.ended();
+
+                        //Removing listener
+                        thumbView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    }
+                });
+
     }
 
     private static Rect rect;
