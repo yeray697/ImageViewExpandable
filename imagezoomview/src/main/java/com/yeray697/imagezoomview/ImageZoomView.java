@@ -16,6 +16,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -56,6 +57,7 @@ public class ImageZoomView extends RelativeLayout {
     private Drawable image;
     private View thumbView;
     private int containerId;
+    private OnBackPressedListener onBackPressedListener;
 
     //Animation variables
     private static Animator mCurrentAnimator;
@@ -69,7 +71,17 @@ public class ImageZoomView extends RelativeLayout {
     private static Rect rect;
 
     /**
-     * Listeners to manage events before and after zoom in and out
+     * Listener to manage event after user press back key
+     */
+    public interface OnBackPressedListener{
+        /**
+         * User pressed back key
+         */
+        void pressed();
+    }
+
+    /**
+     * Listener to manage events before and after zoom in and out
      */
     public interface OnAnimationListener {
         /**
@@ -90,10 +102,12 @@ public class ImageZoomView extends RelativeLayout {
         void postZoomOut();
     }
 
+    /* TODO: When you create the view programmatically, it doesn't save the state when it is rotated
     public ImageZoomView(Context context) {
         super(context,null);
         inflateView(null);
     }
+   */
 
     public ImageZoomView(Context context, AttributeSet attrs) {
         super(context, attrs,0);
@@ -105,6 +119,10 @@ public class ImageZoomView extends RelativeLayout {
         inflateView(attrs);
     }
 
+    /**
+     * Inflate the view and check if you pass xml attributes, they will be checked it
+     * @param attrs Attributes
+     */
     private void inflateView(AttributeSet attrs) {
         String infService = Context.LAYOUT_INFLATER_SERVICE;
         LayoutInflater li = (LayoutInflater)getContext().getSystemService(infService);
@@ -134,6 +152,8 @@ public class ImageZoomView extends RelativeLayout {
             public boolean onKey(View view, int keyCode, KeyEvent event) {
                 if (zoomed && keyCode == KeyEvent.KEYCODE_BACK) {
                     zoomOut();
+                    if (onBackPressedListener != null)
+                        onBackPressedListener.pressed();
                     return true;
                 }
                 return false;
@@ -435,6 +455,7 @@ public class ImageZoomView extends RelativeLayout {
                         thumbView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     }
                 });
+        this.thumbView.requestLayout();
         this.bringToFront();
     }
 
@@ -475,6 +496,14 @@ public class ImageZoomView extends RelativeLayout {
                 return highlightImageOnTouch(view,motionEvent);
             }
         });
+    }
+
+    /**
+     * Set a listener to handle when the user presses back key
+     * @param onBackPressedListener
+     */
+    public void setOnBackPressedListener(OnBackPressedListener onBackPressedListener) {
+        this.onBackPressedListener = onBackPressedListener;
     }
 
     /**
@@ -523,5 +552,13 @@ public class ImageZoomView extends RelativeLayout {
      */
     public void setEndColor(int endColor) {
         this.endColor = endColor;
+    }
+
+    /**
+     * Return if the image is zoomed
+     * @return
+     */
+    public boolean isZoomed() {
+        return zoomed;
     }
 }
