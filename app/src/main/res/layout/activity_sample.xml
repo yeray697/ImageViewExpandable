@@ -33,7 +33,5 @@
     <com.yeray697.imagezoomview.ImageZoomView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:endColor="#55000000"
-        app:zoomTime="2000"
         android:id="@+id/ivZoom"/>
 </RelativeLayout>

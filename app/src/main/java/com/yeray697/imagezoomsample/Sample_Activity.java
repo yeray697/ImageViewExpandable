@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import com.yeray697.imagezoomview.ImageZoomView;
 
@@ -13,6 +14,7 @@ public class Sample_Activity extends AppCompatActivity {
     ImageView imageView1;
     ImageView imageView2;
     ImageView imageView3;
+    RelativeLayout container;
     private ImageZoomView.OnAnimationListener listener;
 
     @Override
@@ -20,6 +22,7 @@ public class Sample_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sample);
 
+        container = (RelativeLayout) findViewById(R.id.activity_sample);
         listener = new ImageZoomView.OnAnimationListener() {
             @Override
             public void preZoomIn() {
@@ -57,7 +60,7 @@ public class Sample_Activity extends AppCompatActivity {
         imageView1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                izv.zoomIn(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+                izv.zoomIn(container,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
 
             }
         });
@@ -76,7 +79,7 @@ public class Sample_Activity extends AppCompatActivity {
 
                 //izv = new ImageZoomView(Sample_Activity.this);
                 //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-                izv.zoomIn(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+                izv.zoomIn(container,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
 
             }
         });
@@ -95,7 +98,7 @@ public class Sample_Activity extends AppCompatActivity {
 
                 //izv = new ImageZoomView(Sample_Activity.this);
                 //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-                izv.zoomIn(R.id.activity_sample,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
+                izv.zoomIn(container,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
 
             }
         });
