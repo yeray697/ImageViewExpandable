@@ -19,6 +19,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentManager;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -34,11 +36,11 @@ import java.io.ByteArrayOutputStream;
 
 public class ImageZoomView extends RelativeLayout {
 
+    private ImageZoomFragment fragment;
     //Save and restore instance keys
     private final static String ZOOM_KEY = "zoom";
     private final static String IMAGE_KEY = "image";
     private final static String THUMBVIEW_KEY = "thumbView";
-    private final static String CONTAINER_ID_KEY = "containerId";
     private final static String START_COLOR_KEY = "start_color";
     private final static String END_COLOR_KEY = "end_color";
     private final static String SUPER_STATE_KEY = "superState";
@@ -56,7 +58,6 @@ public class ImageZoomView extends RelativeLayout {
     private boolean zoomed;
     private Drawable image;
     private View thumbView;
-    private int containerId;
     private OnBackPressedListener onBackPressedListener;
 
     //Animation variables
@@ -124,6 +125,14 @@ public class ImageZoomView extends RelativeLayout {
      * @param attrs Attributes
      */
     private void inflateView(AttributeSet attrs) {
+        FragmentManager fragmentManager = ((android.support.v4.app.FragmentActivity) getContext()).getSupportFragmentManager();
+
+        fragment = (ImageZoomFragment) fragmentManager.findFragmentByTag("IMAGE_FRAGMENT");
+        if (fragment == null) {
+            fragment = new ImageZoomFragment();
+            fragmentManager.beginTransaction().add(fragment,"IMAGE_FRAGMENT").commit();
+        }
+
         String infService = Context.LAYOUT_INFLATER_SERVICE;
         LayoutInflater li = (LayoutInflater)getContext().getSystemService(infService);
         li.inflate(R.layout.imagezoomview, this, true);
@@ -178,16 +187,16 @@ public class ImageZoomView extends RelativeLayout {
      * Main sources:
      *      https://developer.android.com/training/animation/zoom.html
      *      https://www.youtube.com/watch?v=bSgUn2rZiko
-     * @param containerId View container id
+     * @param container View container
      * @param image Image to display
      * @param thumbView ThumView view
      * @param onAnimationListener Listener to handle pre/post zoom in and out
      */
-    public void zoomIn(int containerId, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
+    public void zoomIn(View container, Drawable image, View thumbView, @Nullable final OnAnimationListener onAnimationListener) {
 
         this.onAnimationListener = onAnimationListener;
         this.thumbView = thumbView;
-        this.containerId = containerId;
+        fragment.setContainer(container);
         this.image = image;
 
         configInitialPoints(new ConfigInitialPointsListener() {
@@ -338,7 +347,6 @@ public class ImageZoomView extends RelativeLayout {
             bundle.putInt(START_COLOR_KEY,startColor);
             bundle.putInt(END_COLOR_KEY,endColor);
             bundle.putInt(THUMBVIEW_KEY,thumbView.getId());
-            bundle.putInt(CONTAINER_ID_KEY,containerId);
         }
         return bundle;
     }
@@ -359,7 +367,6 @@ public class ImageZoomView extends RelativeLayout {
                 parent.setVisibility(VISIBLE);
 
                 thumbView = ((View)this.getParent()).findViewById(bundle.getInt(THUMBVIEW_KEY));
-                containerId = bundle.getInt(CONTAINER_ID_KEY);
                 startColor = bundle.getInt(START_COLOR_KEY);
                 endColor = bundle.getInt(END_COLOR_KEY);
 
@@ -420,8 +427,7 @@ public class ImageZoomView extends RelativeLayout {
                     public void onGlobalLayout() {
 
                         thumbView.getGlobalVisibleRect(startBounds);
-                        ((Activity)getContext()).findViewById(containerId)
-                                .getGlobalVisibleRect(finalBounds, globalOffset);
+                        fragment.getContainer().getGlobalVisibleRect(finalBounds, globalOffset);
                         startBounds.offset(-globalOffset.x, -globalOffset.y);
                         finalBounds.offset(-globalOffset.x, -globalOffset.y);
 

@@ -11,12 +11,24 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.yeray697.imagezoomsample.Sample_Activity">
-    <ImageView
-        android:layout_margin="30dp"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:id="@+id/ivSample"
-        android:src="@mipmap/ic_launcher"/>
+
+    <android.support.v7.widget.Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:theme="?attr/actionBarTheme"
+        android:minHeight="?attr/actionBarSize"
+        android:id="@+id/toolbar">
+
+        <ImageView
+            android:layout_margin="30dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:id="@+id/ivSample"
+            android:src="@mipmap/ic_launcher"/>
+
+
+    </android.support.v7.widget.Toolbar>
     <ImageView
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -33,7 +45,5 @@
     <com.yeray697.imagezoomview.ImageZoomView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:endColor="#55000000"
-        app:zoomTime="2000"
         android:id="@+id/ivZoom"/>
 </RelativeLayout>
