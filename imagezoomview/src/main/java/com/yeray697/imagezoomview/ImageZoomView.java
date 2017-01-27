@@ -9,14 +9,10 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.FragmentManager;
@@ -31,16 +27,23 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
-import java.io.ByteArrayOutputStream;
-
-
 public class ImageZoomView extends RelativeLayout {
 
+<<<<<<< HEAD
     private ImageZoomFragment fragment;
+=======
+    private ImageFragment fragment;
+
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
     //Save and restore instance keys
     private final static String ZOOM_KEY = "zoom";
     private final static String IMAGE_KEY = "image";
     private final static String THUMBVIEW_KEY = "thumbView";
+<<<<<<< HEAD
+=======
+    private final static String CONTAINER_ID_KEY = "containerId";
+    private final static String ZOOM_TIME_KEY = "zoom_time";
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
     private final static String START_COLOR_KEY = "start_color";
     private final static String END_COLOR_KEY = "end_color";
     private final static String SUPER_STATE_KEY = "superState";
@@ -54,10 +57,14 @@ public class ImageZoomView extends RelativeLayout {
     private ImageView destination;
     private RelativeLayout parent;
 
+<<<<<<< HEAD
     //Zoom in and out variables
     private boolean zoomed;
     private Drawable image;
     private View thumbView;
+=======
+
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
     private OnBackPressedListener onBackPressedListener;
 
     //Animation variables
@@ -127,12 +134,20 @@ public class ImageZoomView extends RelativeLayout {
     private void inflateView(AttributeSet attrs) {
         FragmentManager fragmentManager = ((android.support.v4.app.FragmentActivity) getContext()).getSupportFragmentManager();
 
+<<<<<<< HEAD
         fragment = (ImageZoomFragment) fragmentManager.findFragmentByTag("IMAGE_FRAGMENT");
         if (fragment == null) {
             fragment = new ImageZoomFragment();
             fragmentManager.beginTransaction().add(fragment,"IMAGE_FRAGMENT").commit();
         }
 
+=======
+        fragment = (ImageFragment) fragmentManager.findFragmentByTag("IMAGE_FRAGMENT");
+        if (fragment == null) {
+            fragment = new ImageFragment();
+            fragmentManager.beginTransaction().add(fragment,"IMAGE_FRAGMENT").commit();
+        }
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
         String infService = Context.LAYOUT_INFLATER_SERVICE;
         LayoutInflater li = (LayoutInflater)getContext().getSystemService(infService);
         li.inflate(R.layout.imagezoomview, this, true);
@@ -159,7 +174,7 @@ public class ImageZoomView extends RelativeLayout {
         this.setOnKeyListener(new OnKeyListener() {
             @Override
             public boolean onKey(View view, int keyCode, KeyEvent event) {
-                if (zoomed && keyCode == KeyEvent.KEYCODE_BACK) {
+                if (fragment.isZoomed() && keyCode == KeyEvent.KEYCODE_BACK) {
                     zoomOut();
                     if (onBackPressedListener != null)
                         onBackPressedListener.pressed();
@@ -168,11 +183,34 @@ public class ImageZoomView extends RelativeLayout {
                 return false;
             }
         });
-        zoomed = false;
         destination.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {}
         });
+
+        if (fragment.isZoomed()) {
+                destination.setImageDrawable(fragment.getImage());
+
+                destination.setVisibility(VISIBLE);
+                parent.setVisibility(VISIBLE);
+
+                parent.setBackgroundColor(endColor);
+
+                destination.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        fragment.setZoomed(false);
+                        if (mCurrentAnimator != null) {
+                            mCurrentAnimator.cancel();
+                        }
+                        if (onAnimationListener != null)
+                            onAnimationListener.preZoomOut();
+                        zoomOutAnimation();
+                    }
+                });
+
+                configInitialPoints(null);
+        }
     }
 
     /**
@@ -192,6 +230,7 @@ public class ImageZoomView extends RelativeLayout {
      * @param thumbView ThumView view
      * @param onAnimationListener Listener to handle pre/post zoom in and out
      */
+<<<<<<< HEAD
     public void zoomIn(View container, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
 
         if (this.thumbView != null) {
@@ -206,6 +245,14 @@ public class ImageZoomView extends RelativeLayout {
         this.thumbView = thumbView;
         fragment.setContainer(container);
         this.image = image;
+=======
+    public void zoomIn(View containerId, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
+
+        this.onAnimationListener = onAnimationListener;
+        fragment.setThumbView(thumbView);
+        fragment.setContainerId(containerId);
+        fragment.setImage(image);
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
 
         configInitialPoints(new ConfigInitialPointsListener() {
             @Override
@@ -217,7 +264,7 @@ public class ImageZoomView extends RelativeLayout {
                 destination.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        zoomed = false;
+                        fragment.setZoomed(false);
                         if (mCurrentAnimator != null) {
                             mCurrentAnimator.cancel();
                         }
@@ -355,7 +402,10 @@ public class ImageZoomView extends RelativeLayout {
     public Parcelable onSaveInstanceState() {
         Bundle bundle = new Bundle();
         bundle.putParcelable(SUPER_STATE_KEY, super.onSaveInstanceState());
-        bundle.putBoolean(ZOOM_KEY, this.zoomed);
+        bundle.putInt(START_COLOR_KEY,startColor);
+        bundle.putInt(END_COLOR_KEY,endColor);
+        bundle.putInt(ZOOM_TIME_KEY,zoomTime);
+        /*bundle.putBoolean(ZOOM_KEY, this.zoomed);
         if (zoomed){
             Bitmap bitmap = ((BitmapDrawable)this.image).getBitmap();
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -365,7 +415,12 @@ public class ImageZoomView extends RelativeLayout {
             bundle.putInt(START_COLOR_KEY,startColor);
             bundle.putInt(END_COLOR_KEY,endColor);
             bundle.putInt(THUMBVIEW_KEY,thumbView.getId());
+<<<<<<< HEAD
         }
+=======
+            bundle.putInt(CONTAINER_ID_KEY,containerId);
+        }*/
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
         return bundle;
     }
 
@@ -374,6 +429,7 @@ public class ImageZoomView extends RelativeLayout {
         if (state instanceof Bundle)
         {
             Bundle bundle = (Bundle) state;
+<<<<<<< HEAD
             this.zoomed = bundle.getBoolean(ZOOM_KEY);
             if (zoomed) {
                 byte[] image = bundle.getByteArray(IMAGE_KEY);
@@ -389,23 +445,14 @@ public class ImageZoomView extends RelativeLayout {
                 endColor = bundle.getInt(END_COLOR_KEY);
 
                 parent.setBackgroundColor(endColor);
-
-                destination.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        zoomed = false;
-                        if (mCurrentAnimator != null) {
-                            mCurrentAnimator.cancel();
-                        }
-                        if (onAnimationListener != null)
-                            onAnimationListener.preZoomOut();
-                        zoomOutAnimation();
-                    }
-                });
-
-                configInitialPoints(null);
-            }
+=======
             state = bundle.getParcelable(SUPER_STATE_KEY);
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
+
+            startColor = bundle.getInt(START_COLOR_KEY);
+            endColor = bundle.getInt(END_COLOR_KEY);
+            zoomTime = bundle.getInt(ZOOM_TIME_KEY);
+
         }
         super.onRestoreInstanceState(state);
     }
@@ -424,7 +471,7 @@ public class ImageZoomView extends RelativeLayout {
      * Contains operations to get coordinates that are used to play the animation
      */
     private void configInitialPoints(final ConfigInitialPointsListener configInitialPointsListener) {
-        zoomed = true;
+        fragment.setZoomed(true);
         if (onAnimationListener != null)
             onAnimationListener.preZoomIn();
 
@@ -432,18 +479,19 @@ public class ImageZoomView extends RelativeLayout {
             mCurrentAnimator.cancel();
         }
 
-        destination.setImageDrawable(this.image);
+        destination.setImageDrawable(fragment.getImage());
 
         startBounds = new Rect();
         finalBounds = new Rect();
         final Point globalOffset = new Point();
 
 
-        this.thumbView.getViewTreeObserver().addOnGlobalLayoutListener(
+        fragment.getThumbView().getViewTreeObserver().addOnGlobalLayoutListener(
                 new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
 
+<<<<<<< HEAD
                         thumbView.getGlobalVisibleRect(startBounds);
                         fragment.getContainer().getGlobalVisibleRect(finalBounds, globalOffset);
                         startBounds.offset(-globalOffset.x, -globalOffset.y);
@@ -464,22 +512,42 @@ public class ImageZoomView extends RelativeLayout {
                             startBounds.top -= deltaHeight;
                             startBounds.bottom += deltaHeight;
                         }
+=======
+>>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
 
-                        destination.setVisibility(View.VISIBLE);
-                        parent.setVisibility(View.VISIBLE);
-
-
-                        destination.setPivotX(0f);
-                        destination.setPivotY(0f);
-
-                        if (configInitialPointsListener != null)
-                            configInitialPointsListener.ended();
-
-                        //Removing listener
-                        thumbView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     }
                 });
-        this.thumbView.requestLayout();
+        fragment.getThumbView().getGlobalVisibleRect(startBounds);
+        fragment.getContainerId().getGlobalVisibleRect(finalBounds, globalOffset);
+        startBounds.offset(-globalOffset.x, -globalOffset.y);
+        finalBounds.offset(-globalOffset.x, -globalOffset.y);
+
+
+        if ((float) finalBounds.width() / finalBounds.height()
+                > (float) startBounds.width() / startBounds.height()) {
+            startScale = (float) startBounds.height() / finalBounds.height();
+            float startWidth = startScale * finalBounds.width();
+            float deltaWidth = (startWidth - startBounds.width()) / 2;
+            startBounds.left -= deltaWidth;
+            startBounds.right += deltaWidth;
+        } else {
+            startScale = (float) startBounds.width() / finalBounds.width();
+            float startHeight = startScale * finalBounds.height();
+            float deltaHeight = (startHeight - startBounds.height()) / 2;
+            startBounds.top -= deltaHeight;
+            startBounds.bottom += deltaHeight;
+        }
+
+        destination.setVisibility(View.VISIBLE);
+        parent.setVisibility(View.VISIBLE);
+
+
+        destination.setPivotX(0f);
+        destination.setPivotY(0f);
+
+        if (configInitialPointsListener != null)
+            configInitialPointsListener.ended();
+
         this.bringToFront();
     }
 
@@ -583,6 +651,6 @@ public class ImageZoomView extends RelativeLayout {
      * @return
      */
     public boolean isZoomed() {
-        return zoomed;
+        return fragment.isZoomed();
     }
 }
