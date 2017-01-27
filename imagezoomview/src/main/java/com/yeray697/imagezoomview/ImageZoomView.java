@@ -19,7 +19,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentManager;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -27,6 +26,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -192,7 +192,15 @@ public class ImageZoomView extends RelativeLayout {
      * @param thumbView ThumView view
      * @param onAnimationListener Listener to handle pre/post zoom in and out
      */
-    public void zoomIn(View container, Drawable image, View thumbView, @Nullable final OnAnimationListener onAnimationListener) {
+    public void zoomIn(View container, Drawable image, View thumbView, final OnAnimationListener onAnimationListener) {
+
+        if (this.thumbView != null) {
+            Animation a = this.thumbView.getAnimation();
+            if (a != null) {
+                a.cancel();
+            }
+            this.thumbView.clearAnimation();
+        }
 
         this.onAnimationListener = onAnimationListener;
         this.thumbView = thumbView;
@@ -226,6 +234,11 @@ public class ImageZoomView extends RelativeLayout {
      * Method that runs the zoom in animation
      */
     private void zoomInAnimation(){
+        Animation a = thumbView.getAnimation();
+        if (a != null) {
+            a.cancel();
+        }
+        thumbView.clearAnimation();
         //Background fade in animation
         ObjectAnimator fadeIn = ObjectAnimator.ofInt(parent, "backgroundColor",startColor,endColor);
         fadeIn.setRepeatCount(0);
@@ -267,6 +280,11 @@ public class ImageZoomView extends RelativeLayout {
      * Method that runs the zoom out animation
      */
     private void zoomOutAnimation() {
+        Animation a = thumbView.getAnimation();
+        if (a != null) {
+            a.cancel();
+        }
+        thumbView.clearAnimation();
         //Background fade out animation
         ObjectAnimator fadeOut = ObjectAnimator.ofInt(parent, "backgroundColor",endColor,startColor);
         fadeOut.setRepeatCount(0);
@@ -466,7 +484,7 @@ public class ImageZoomView extends RelativeLayout {
     }
 
     /**
-     * Method that higlight an image when it is touched.
+     * Method that highlight an image when it is touched.
      * To use it, you must add it on view.OnTouchListener.
      * It only works when you add it to an ImageView that is going to be zoomed
      * @param v Touched view
