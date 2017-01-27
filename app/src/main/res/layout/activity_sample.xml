@@ -45,9 +45,6 @@
     <com.yeray697.imagezoomview.ImageZoomView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-<<<<<<< HEAD
         app:zoomTime="1000"
-=======
->>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
         android:id="@+id/ivZoom"/>
 </RelativeLayout>

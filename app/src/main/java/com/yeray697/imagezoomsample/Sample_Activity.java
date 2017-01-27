@@ -14,12 +14,8 @@ public class Sample_Activity extends AppCompatActivity {
     ImageView imageView1;
     ImageView imageView2;
     ImageView imageView3;
-<<<<<<< HEAD
     RelativeLayout rlContainer;
 
-=======
-    RelativeLayout container;
->>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
     private ImageZoomView.OnAnimationListener listener;
 
     @Override
@@ -28,7 +24,6 @@ public class Sample_Activity extends AppCompatActivity {
         setContentView(R.layout.activity_sample);
         rlContainer = (RelativeLayout) findViewById(R.id.activity_sample);
 
-        container = (RelativeLayout) findViewById(R.id.activity_sample);
         listener = new ImageZoomView.OnAnimationListener() {
             @Override
             public void preZoomIn() {
@@ -66,11 +61,7 @@ public class Sample_Activity extends AppCompatActivity {
         imageView1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-<<<<<<< HEAD
                 izv.zoomIn(rlContainer,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
-=======
-                izv.zoomIn(container,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
->>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
 
             }
         });
@@ -89,11 +80,7 @@ public class Sample_Activity extends AppCompatActivity {
 
                 //izv = new ImageZoomView(Sample_Activity.this);
                 //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-<<<<<<< HEAD
                 izv.zoomIn(rlContainer,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
-=======
-                izv.zoomIn(container,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
->>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
 
             }
         });
@@ -112,11 +99,7 @@ public class Sample_Activity extends AppCompatActivity {
 
                 //izv = new ImageZoomView(Sample_Activity.this);
                 //((RelativeLayout)findViewById(R.id.activity_sample)).addView(izv);
-<<<<<<< HEAD
                 izv.zoomIn(rlContainer,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
-=======
-                izv.zoomIn(container,getResources().getDrawable(R.mipmap.ic_launcher),view, listener);
->>>>>>> 23a84846d7d95479e2ff433589ceb45c1d60b537
 
             }
         });
